@@ -151,13 +151,21 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Asteroid.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Player_Bullet.cpp" />
+    <ClCompile Include="RandomNumber.cpp" />
     <ClCompile Include="SDLControl.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="GameTime.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Asteroid.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Player_Bullet.h" />
+    <ClInclude Include="RandomNumber.h" />
     <ClInclude Include="SDLControl.h" />
+    <ClInclude Include="GameTime.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

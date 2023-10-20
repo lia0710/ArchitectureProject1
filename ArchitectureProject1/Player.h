@@ -3,6 +3,9 @@
 #define _Player
 #include "SDL.h"
 #include "SDL_image.h"
+#include "Player_Bullet.h"
+#include <vector>
+
 class Player
 {
 public:
@@ -10,6 +13,12 @@ public:
 	SDL_Rect playerRect;
 	SDL_Texture* texture; 
 	SDL_Renderer* renderer;
+
+	//list of bullets
+	//each time the player draws, iterate through the list and also call draw on the bullets
+	//draw from the bullets will also move them
+	std::vector<Player_Bullet*> bulletList;
+	int index = 0;
 
 	Player();
 	~Player();
