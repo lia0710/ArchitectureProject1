@@ -7,6 +7,7 @@
 #include "SDLControl.h"
 #include "Asteroid.h"
 #include "GameTime.h"
+#include "cmath"
 
 #include <thread>
 
@@ -30,6 +31,11 @@ int main()
 
 	player->Initialize(renderer);
 
+	//std::cout << "x: " << player->playerRect.x << std::endl;
+	//std::cout << "y: " << player->playerRect.y << std::endl;
+	//std::cout << "width: " << player->playerRect.w << std::endl;
+	//std::cout << "height: " << player->playerRect.h << std::endl;
+
 	while (!quit)
 	{
 		player->Update();
@@ -45,6 +51,11 @@ int main()
 			Asteroid* asteroid = new Asteroid(renderer);
 			asteroidList.push_back(asteroid);
 			asteroidIndex++;
+
+			//std::cout << "x: " << asteroid->asteroidRect.x << std::endl;
+			//std::cout << "y: " << asteroid->asteroidRect.y << std::endl;
+			//std::cout << "width: " << asteroid->asteroidRect.w << std::endl;
+			//std::cout << "height: " << asteroid->asteroidRect.h << std::endl;
 		}
 
 		while (SDL_PollEvent(&event))
@@ -70,25 +81,66 @@ int main()
 
 		SDL_RenderClear(renderer);
 
-		//use player draw()
-		//player->texture = texture;
 		player->Draw(renderer);
 		if (asteroidIndex > 0)
 		{
 			for (int i = 0; i < asteroidIndex; i++)
 			{
 				asteroidList[i]->Draw(renderer); 
-				if (asteroidList[i]->asteroidRect.x < -100)
+
+				//player to asteroid collision calc
+				int distancex = (player->playerRect.x + (player->playerRect.w / 2)) - (asteroidList[i]->asteroidRect.x + (asteroidList[i]->asteroidRect.w) / 2);
+				distancex = distancex * distancex;
+				int distancey = (player->playerRect.y + (player->playerRect.h) / 2) - (asteroidList[i]->asteroidRect.y + (asteroidList[i]->asteroidRect.h) / 2);
+				distancey = distancey * distancey;
+				float distance = (float)(distancey + distancex);
+				distance = sqrtf(distance);
+
+				bool asteroiddelete = false;
+				//bullet to asteroid collision calc
+				for (int j = 0; j < player->index; j++)
 				{
-					delete asteroidList[i];
-					asteroidList.erase(asteroidList.begin() + i);
-					asteroidIndex--;
+					int bdistancex = (player->bulletList[j]->playerBulletRect.x + (player->bulletList[j]->playerBulletRect.w / 2)) - (asteroidList[i]->asteroidRect.x + (asteroidList[i]->asteroidRect.w) / 2);
+					bdistancex = bdistancex * bdistancex;
+					int bdistancey = (player->bulletList[j]->playerBulletRect.y + (player->bulletList[j]->playerBulletRect.h / 2)) - (asteroidList[i]->asteroidRect.y + (asteroidList[i]->asteroidRect.h) / 2);
+					bdistancey = bdistancey * bdistancey;
+					float bdistance = (float)(bdistancey + bdistancex);
+					bdistance = sqrtf(bdistance);
+					if (asteroiddelete == false)
+					{
+						if (bdistance - player->bulletList[j]->playerBulletRect.w / 2 - asteroidList[i]->asteroidRect.w / 2 < 0)
+						{
+							delete asteroidList[i];
+							asteroidList.erase(asteroidList.begin() + i);
+							asteroidIndex--;
+							asteroiddelete = true;
+						}
+					}
 				}
 
-				//collision
-				int distance = player->playerRect.x;
+				if (asteroiddelete == false)
+				{
+					if (distance - player->playerRect.w / 2 - asteroidList[i]->asteroidRect.w / 2 < 0)
+					{
+						delete asteroidList[i];
+						asteroidList.erase(asteroidList.begin() + i);
+						asteroidIndex--;
+					}
+					else if (asteroidList[i]->asteroidRect.x < -100)
+					{
+						delete asteroidList[i];
+						asteroidList.erase(asteroidList.begin() + i);
+						asteroidIndex--;
+					}
+				}
+				
 
 				//collision
+				
+
+				//collision
+				//player = 96x96
+				//asteroid = 64x64 or 22x21
 			}
 		}
 

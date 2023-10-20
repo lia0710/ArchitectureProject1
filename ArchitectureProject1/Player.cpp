@@ -17,6 +17,7 @@ void Player::Initialize(SDL_Renderer* _renderer)
 	SDL_QueryTexture(texture, NULL, NULL, &size.x, &size.y);
 
 	SDL_Rect dstrect = { 100, 300, size.x*2, size.y*2 };
+
 	playerRect = dstrect;
 }
 
