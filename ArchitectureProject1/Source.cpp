@@ -3,11 +3,13 @@
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 #include "SDL_image.h"
+#include "SDL_ttf.h"
 #include "Player.h"
 #include "SDLControl.h"
 #include "Asteroid.h"
 #include "GameTime.h"
 #include "EnemyShip.h"
+#include "EnemyShip2.h"
 #include "cmath"
 
 #include <thread>
@@ -18,6 +20,7 @@ int main()
 	int points = 0;
 	Player* player = new Player();
 	EnemyShip* enemy = new EnemyShip();
+	EnemyShip2* enemy2 = new EnemyShip2();
 
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
@@ -37,6 +40,69 @@ int main()
 	//change size here
 	window = SDL_CreateWindow("SDL Example", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, 0);
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+	//background, uses three of the same image scrolling on a loop
+
+	SDL_Surface* surface1 = IMG_Load("starBackground.png");
+	SDL_Surface* surface2 = IMG_Load("starBackground.png");
+	SDL_Surface* surface3 = IMG_Load("starBackground.png");
+	SDL_Texture* texture1 = SDL_CreateTextureFromSurface(renderer, surface1);
+	SDL_Texture* texture2 = SDL_CreateTextureFromSurface(renderer, surface2);
+	SDL_Texture* texture3 = SDL_CreateTextureFromSurface(renderer, surface3);
+	SDL_FreeSurface(surface1);
+	SDL_FreeSurface(surface2);
+	SDL_FreeSurface(surface3);
+
+	SDL_Point size1;
+	SDL_Point size2;
+	SDL_Point size3;
+	SDL_QueryTexture(texture1, NULL, NULL, &size1.x, &size1.y);
+	SDL_QueryTexture(texture2, NULL, NULL, &size2.x, &size2.y);
+	SDL_QueryTexture(texture3, NULL, NULL, &size3.x, &size3.y);
+
+	SDL_Rect dstrect1 = { -1280, 0, 1280, 720};
+	SDL_Rect dstrect2 = { 0, 0, 1280, 720 };
+	SDL_Rect dstrect3 = { 1280, 0, 1280, 720 };
+
+	//background
+
+	//lives
+
+	SDL_Surface* surfacelife1 = IMG_Load("life.png");
+	SDL_Surface* surfacelife2 = IMG_Load("life.png");
+	SDL_Surface* surfacelife3 = IMG_Load("life.png");
+	SDL_Texture* texturelife1 = SDL_CreateTextureFromSurface(renderer, surfacelife1);
+	SDL_Texture* texturelife2 = SDL_CreateTextureFromSurface(renderer, surfacelife2);
+	SDL_Texture* texturelife3 = SDL_CreateTextureFromSurface(renderer, surfacelife3);
+	SDL_FreeSurface(surfacelife1);
+	SDL_FreeSurface(surfacelife2);
+	SDL_FreeSurface(surfacelife3);
+
+	SDL_Point sizelife1;
+	SDL_Point sizelife2;
+	SDL_Point sizelife3;
+	SDL_QueryTexture(texturelife1, NULL, NULL, &sizelife1.x, &sizelife1.y);
+	SDL_QueryTexture(texturelife2, NULL, NULL, &sizelife2.x, &sizelife2.y);
+	SDL_QueryTexture(texturelife3, NULL, NULL, &sizelife3.x, &sizelife3.y);
+
+	SDL_Rect dstrectlife1 = { 0, 0, sizelife1.x, sizelife1.y };
+	SDL_Rect dstrectlife2 = { 50, 0, sizelife2.x, sizelife2.y };
+	SDL_Rect dstrectlife3 = { 100, 0, sizelife3.x, sizelife3.y };
+
+	//lives
+
+	//score text
+
+	TTF_Font* cour = TTF_OpenFont("cour.ttf", 36);
+	SDL_Color black = { 255, 255, 255 };
+	SDL_Surface* surfaceMessage = TTF_RenderText_Solid(cour, "Score:", black);
+	SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+	SDL_FreeSurface(surfaceMessage);
+	SDL_Point sizetext;
+	SDL_QueryTexture(Message, NULL, NULL, &sizetext.x, &sizetext.y);
+	SDL_Rect dstrecttext = { 0, 0, sizetext.x, sizetext.y };
+
+	//score text
 
 	player->Initialize(renderer);
 
@@ -102,8 +168,47 @@ int main()
 
 
 		SDL_RenderClear(renderer);
+		
+		//background draw and animate
+		dstrect1.x -= 1;
+		dstrect2.x -= 1;
+		dstrect3.x -= 1;
+		if (dstrect1.x <= -1280)
+		{
+			dstrect1.x = 1280;
+		}
+		if (dstrect2.x <= -1280)
+		{
+			dstrect2.x = 1280;
+		}
+		if (dstrect3.x <= -1280)
+		{
+			dstrect3.x = 1280;
+		}
+		SDL_RenderCopy(renderer, texture1, NULL, &dstrect1);
+		SDL_RenderCopy(renderer, texture2, NULL, &dstrect2);
+		SDL_RenderCopy(renderer, texture3, NULL, &dstrect3);
 
 		player->Draw(renderer);
+
+		//life draw
+		if (playerLives >= 3)
+		{
+			SDL_RenderCopy(renderer, texturelife3, NULL, &dstrectlife3);
+		}
+		if (playerLives >= 2)
+		{
+			SDL_RenderCopy(renderer, texturelife2, NULL, &dstrectlife2);
+		}
+		if (playerLives >= 1)
+		{
+			SDL_RenderCopy(renderer, texturelife1, NULL, &dstrectlife1);
+		}
+
+		//score draw
+		SDL_RenderCopy(renderer, Message, NULL, &dstrecttext);
+
+
 
 		
 		if (asteroidIndex > 0)
