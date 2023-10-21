@@ -36,7 +36,7 @@ void Asteroid::Initialize(SDL_Renderer* _renderer)
 	SDL_QueryTexture(texture, NULL, NULL, &size.x, &size.y);
 
 	random = newrandom->GetRandomNumber(0, 500);
-	SDL_Rect dstrect = { 1000, random, size.x, size.y};
+	SDL_Rect dstrect = { 1500, random, size.x, size.y};
 	asteroidRect = dstrect;
 }
 

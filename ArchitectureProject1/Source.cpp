@@ -7,21 +7,30 @@
 #include "SDLControl.h"
 #include "Asteroid.h"
 #include "GameTime.h"
+#include "EnemyShip.h"
 #include "cmath"
 
 #include <thread>
 
 int main() 
 {
+	int playerLives = 3;
+	int points = 0;
 	Player* player = new Player();
+	EnemyShip* enemy = new EnemyShip();
 
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
 
 	float timecount = 3.0f;
+	float movecount = 0.1f;
+	float shootcount = 1;
 
 	std::vector<Asteroid*> asteroidList;
 	int asteroidIndex = 0;
+
+	std::vector<EnemyShip*> enemyList;
+	int enemyIndex = 0;
 
 	bool quit = false;
 
@@ -31,14 +40,20 @@ int main()
 
 	player->Initialize(renderer);
 
-	//std::cout << "x: " << player->playerRect.x << std::endl;
-	//std::cout << "y: " << player->playerRect.y << std::endl;
-	//std::cout << "width: " << player->playerRect.w << std::endl;
-	//std::cout << "height: " << player->playerRect.h << std::endl;
 
 	while (!quit)
 	{
+		//enemy dead, spawn new enemy
+		if (enemyIndex == 0)
+		{
+			enemy = new EnemyShip();
+			enemy->Initialize(renderer);
+			enemyList.push_back(enemy);
+			enemyIndex++;
+		}
+
 		player->Update();
+		enemy->Update();
 		SDL_Event event;
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -51,17 +66,10 @@ int main()
 			Asteroid* asteroid = new Asteroid(renderer);
 			asteroidList.push_back(asteroid);
 			asteroidIndex++;
-
-			//std::cout << "x: " << asteroid->asteroidRect.x << std::endl;
-			//std::cout << "y: " << asteroid->asteroidRect.y << std::endl;
-			//std::cout << "width: " << asteroid->asteroidRect.w << std::endl;
-			//std::cout << "height: " << asteroid->asteroidRect.h << std::endl;
 		}
 
 		while (SDL_PollEvent(&event))
 		{
-
-
 			switch (event.type)
 			{
 			case SDL_WINDOWEVENT:
@@ -72,16 +80,32 @@ int main()
 				break;
 			case SDL_KEYDOWN:
 				player->Move(event);
+				if (event.key.keysym.sym == SDLK_ESCAPE)
+				{
+					quit = true;
+				}
 			case SDL_KEYUP:
 				break;
 			}
 		}
 
+		if (GameTime::Instance().TotalTime() > movecount)
+		{
+			movecount += 0.1f;
+			enemy->Move(player);
+		}
+		if (GameTime::Instance().TotalTime() > shootcount)
+		{
+			shootcount += 1;
+			enemy->Shoot(player);
+		}
 
 
 		SDL_RenderClear(renderer);
 
 		player->Draw(renderer);
+
+		
 		if (asteroidIndex > 0)
 		{
 			for (int i = 0; i < asteroidIndex; i++)
@@ -97,31 +121,37 @@ int main()
 				distance = sqrtf(distance);
 
 				bool asteroiddelete = false;
-				//bullet to asteroid collision calc
 				for (int j = 0; j < player->index; j++)
 				{
-					int bdistancex = (player->bulletList[j]->playerBulletRect.x + (player->bulletList[j]->playerBulletRect.w / 2)) - (asteroidList[i]->asteroidRect.x + (asteroidList[i]->asteroidRect.w) / 2);
-					bdistancex = bdistancex * bdistancex;
-					int bdistancey = (player->bulletList[j]->playerBulletRect.y + (player->bulletList[j]->playerBulletRect.h / 2)) - (asteroidList[i]->asteroidRect.y + (asteroidList[i]->asteroidRect.h) / 2);
-					bdistancey = bdistancey * bdistancey;
-					float bdistance = (float)(bdistancey + bdistancex);
-					bdistance = sqrtf(bdistance);
-					if (asteroiddelete == false)
+					//bullet to asteroid collision calc
+					if (asteroiddelete != true)
 					{
-						if (bdistance - player->bulletList[j]->playerBulletRect.w / 2 - asteroidList[i]->asteroidRect.w / 2 < 0)
+						int bdistancex = (player->bulletList[j]->playerBulletRect.x + (player->bulletList[j]->playerBulletRect.w / 2)) - (asteroidList[i]->asteroidRect.x + (asteroidList[i]->asteroidRect.w) / 2);
+						bdistancex = bdistancex * bdistancex;
+						int bdistancey = (player->bulletList[j]->playerBulletRect.y + (player->bulletList[j]->playerBulletRect.h / 2)) - (asteroidList[i]->asteroidRect.y + (asteroidList[i]->asteroidRect.h) / 2);
+						bdistancey = bdistancey * bdistancey;
+						float bdistance = (float)(bdistancey + bdistancex);
+						bdistance = sqrtf(bdistance);
+						if (asteroiddelete == false)
 						{
-							delete asteroidList[i];
-							asteroidList.erase(asteroidList.begin() + i);
-							asteroidIndex--;
-							asteroiddelete = true;
+							if (bdistance - player->bulletList[j]->playerBulletRect.w / 2 - asteroidList[i]->asteroidRect.w / 2 < 0)
+							{
+								delete asteroidList[i];
+								asteroidList.erase(asteroidList.begin() + i);
+								asteroidIndex--;
+								asteroiddelete = true;
+								points++;
+							}
 						}
 					}
+					
 				}
 
 				if (asteroiddelete == false)
 				{
 					if (distance - player->playerRect.w / 2 - asteroidList[i]->asteroidRect.w / 2 < 0)
 					{
+						playerLives--;
 						delete asteroidList[i];
 						asteroidList.erase(asteroidList.begin() + i);
 						asteroidIndex--;
@@ -136,19 +166,108 @@ int main()
 				
 
 				//collision
-				
-
-				//collision
 				//player = 96x96
 				//asteroid = 64x64 or 22x21
 			}
 		}
+		
+
+
+
+
+
+
+		
+
+		//enemy ship collision
+		if (enemyIndex > 0)
+		{
+			for (int i = 0; i < enemyIndex; i++)
+			{
+				enemyList[i]->Draw(renderer);
+				
+				//player to enemy ship collision calc
+				int distancex = (player->playerRect.x + (player->playerRect.w / 2)) - (enemyList[i]->enemyRect.x + (enemyList[i]->enemyRect.w) / 2);
+				distancex = distancex * distancex;
+				int distancey = (player->playerRect.y + (player->playerRect.h) / 2) - (enemyList[i]->enemyRect.y + (enemyList[i]->enemyRect.h) / 2);
+				distancey = distancey * distancey;
+				float distance = (float)(distancey + distancex);
+				distance = sqrtf(distance);
+
+				bool enemydelete = false;
+
+				for (int j = 0; j < player->index; j++)
+				{
+					if (enemydelete != true)
+					{
+						//bullet to enemy collision calc
+						int bdistancex = (player->bulletList[j]->playerBulletRect.x + (player->bulletList[j]->playerBulletRect.w / 2)) - (enemyList[i]->enemyRect.x + (enemyList[i]->enemyRect.w) / 2);
+						bdistancex = bdistancex * bdistancex;
+						int bdistancey = (player->bulletList[j]->playerBulletRect.y + (player->bulletList[j]->playerBulletRect.h / 2)) - (enemyList[i]->enemyRect.y + (enemyList[i]->enemyRect.h) / 2);
+						bdistancey = bdistancey * bdistancey;
+						float bdistance = (float)(bdistancey + bdistancex);
+						bdistance = sqrtf(bdistance);
+						if (enemydelete == false)
+						{
+							if (bdistance - player->bulletList[j]->playerBulletRect.w / 2 - enemyList[i]->enemyRect.w / 2 < 0)
+							{
+								//enemy is hit. Deal damage here
+								delete enemyList[i];
+								enemyList.erase(enemyList.begin() + i);
+								enemyIndex--;
+								enemydelete = true;
+								points = points + 3;
+							}
+						}
+					}
+					
+				}
+
+				//enemy bullet to player collision
+				for (int j = 0; j < enemy->index; j++)
+				{
+					//bullet to enemy collision calc
+					int bdistancex = (enemy->bulletList[j]->enemyBulletRect.x + (enemy->bulletList[j]->enemyBulletRect.w / 2)) - (player->playerRect.x + (player->playerRect.w) / 2);
+					bdistancex = bdistancex * bdistancex;
+					int bdistancey = (enemy->bulletList[j]->enemyBulletRect.y + (enemy->bulletList[j]->enemyBulletRect.h / 2)) - (player->playerRect.y + (player->playerRect.h) / 2);
+					bdistancey = bdistancey * bdistancey;
+					float bdistance = (float)(bdistancey + bdistancex);
+					bdistance = sqrtf(bdistance);
+					if (bdistance - enemy->bulletList[j]->enemyBulletRect.w / 2 - player->playerRect.w / 2 < 0)
+					{
+						playerLives--;
+						delete enemy->bulletList[j];
+						enemy->bulletList.erase(enemy->bulletList.begin() + j);
+						enemy->index--;
+					}
+				}
+
+				//player enemy collision
+				if (enemydelete == false)
+				{
+					if (distance - player->playerRect.w / 2 - enemyList[i]->enemyRect.w / 2 < 0)
+					{
+						//enemy to player crash, make player lose a life
+						playerLives--;
+						delete enemyList[i];
+						enemyList.erase(enemyList.begin() + i);
+						enemyIndex--;
+						points = points + 3;
+					}
+				}
+			}
+		}
+		
 
 
 
 		//Render Objects here
 
 		SDL_RenderPresent(renderer);
+		if (playerLives <= 0)
+		{
+			quit = true;
+		}
 	}
 	SDL_DestroyWindow(window);
 	SDL_Quit();
